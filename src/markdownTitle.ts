@@ -2,9 +2,6 @@ const h1Pattern = /^\s{0,3}#(?!#)(?:\s|$)/;
 const crepeDefaultMarkdownPattern = /^#\s+Untitled\s*\n+\s*Start writing here\.\s*$/i;
 const markdownTextEscapePattern = /\\([\\`*{}\[\]()#+\-.!_$<>|])/g;
 const markdownHeadingSpecialPattern = /([\\`*{}\[\]()#+\-.!_$<>|])/g;
-const fencedCodePattern = /^\s{0,3}(`{3,}|~{3,})/;
-const htmlBreakPattern = /\\?<br\s*(?:\\?\/)?\\?>/gi;
-const htmlBreakOnlyLinePattern = /^(?:\s*\\?<br\s*(?:\\?\/)?\\?>\s*)+$/i;
 
 function unescapeMarkdownText(value: string) {
   return value.replace(markdownTextEscapePattern, '$1');
@@ -19,26 +16,7 @@ function escapeMarkdownHeadingText(value: string) {
 }
 
 export function sanitizeMarkdownSource(markdown: string) {
-  let fenceMarker: string | null = null;
-  return markdown
-    .replace(/\r\n?/g, '\n')
-    .split('\n')
-    .map((line) => {
-      const fenceMatch = fencedCodePattern.exec(line);
-      if (fenceMarker) {
-        if (fenceMatch?.[1]?.[0] === fenceMarker[0] && fenceMatch[1].length >= fenceMarker.length) {
-          fenceMarker = null;
-        }
-        return line;
-      }
-      if (fenceMatch?.[1]) {
-        fenceMarker = fenceMatch[1];
-        return line;
-      }
-      if (htmlBreakOnlyLinePattern.test(line)) return '';
-      return line.replace(htmlBreakPattern, '');
-    })
-    .join('\n');
+  return markdown.replace(/\r\n?/g, '\n');
 }
 
 export function markdownWithoutDefaultTemplate(markdown: string) {
@@ -85,22 +63,9 @@ export function markdownWithTitle(markdown: string, title: string) {
     .replace(/\r\n?/g, '\n')
     .split('\n');
 
-  let fenceMarker: string | null = null;
   const bodyLines = lines.map((line, index) => {
-    const fenceMatch = fencedCodePattern.exec(line);
-    if (fenceMarker) {
-      if (fenceMatch?.[1]?.[0] === fenceMarker[0] && fenceMatch[1].length >= fenceMarker.length) {
-        fenceMarker = null;
-      }
-      return line;
-    }
-    if (fenceMatch?.[1]) {
-      fenceMarker = fenceMatch[1];
-      return line;
-    }
-    if (!h1Pattern.test(line)) return line;
-    if (index === 0) return null;
-    return demoteMarkdownHeading(line);
+    if (index === 0 && h1Pattern.test(line)) return null;
+    return line;
   });
   const body = bodyLines
     .filter((line): line is string => line !== null)

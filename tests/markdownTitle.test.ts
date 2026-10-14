@@ -14,16 +14,16 @@ test('keeps the article title as the first markdown h1', () => {
   );
 });
 
-test('uses the first h1 as the synced title and demotes later h1 headings', () => {
+test('uses the first h1 as the synced title without changing later h1 headings', () => {
   const markdown = '# Original\n\nBody\n\n# Second\n\n### Third';
 
   expect(firstMarkdownHeading(markdown)).toBe('Original');
   expect(markdownWithTitle(markdown, 'Original')).toBe(
-    '# Original\n\nBody\n\n## Second\n\n### Third',
+    '# Original\n\nBody\n\n# Second\n\n### Third',
   );
 });
 
-test('does not demote hash-prefixed lines inside fenced code blocks', () => {
+test('keeps H1 headings unchanged inside and outside fenced code blocks', () => {
   const markdown = [
     '# Original',
     '',
@@ -42,7 +42,7 @@ test('does not demote hash-prefixed lines inside fenced code blocks', () => {
       '# q, k: [B, T, d_k]',
       '```',
       '',
-      '## Second',
+      '# Second',
     ].join('\n'),
   );
 });
@@ -52,7 +52,7 @@ test('only treats the first line h1 as the synced title', () => {
 
   expect(firstMarkdownHeading(markdown)).toBe(null);
   expect(markdownWithTitle(markdown, 'My Title')).toBe(
-    '# My Title\n\nIntro\n\n## Body Heading',
+    '# My Title\n\nIntro\n\n# Body Heading',
   );
 });
 
@@ -89,19 +89,19 @@ test('treats the crepe default template as an empty markdown document', () => {
   expect(markdownWithTitle(markdown, 'Real Title')).toBe('# Real Title');
 });
 
-test('removes html break tags from markdown source outside code fences', () => {
+test('keeps html break tags in markdown source outside code fences', () => {
   expect(sanitizeMarkdownSource(['前文', '', '<br />', '', '后文'].join('\n'))).toBe(
-    ['前文', '', '', '', '后文'].join('\n'),
+    ['前文', '', '<br />', '', '后文'].join('\n'),
   );
-  expect(sanitizeMarkdownSource('前文<br/>后文')).toBe('前文后文');
+  expect(sanitizeMarkdownSource('前文<br/>后文')).toBe('前文<br/>后文');
   expect(sanitizeMarkdownSource(['```html', '<br />', '```'].join('\n'))).toBe(
     ['```html', '<br />', '```'].join('\n'),
   );
 });
 
-test('keeps html break tags out when composing titled markdown', () => {
+test('keeps html break tags when composing titled markdown', () => {
   expect(markdownWithTitle(['Intro', '<br />', 'Body'].join('\n'), 'Title')).toBe(
-    ['# Title', '', 'Intro', '', 'Body'].join('\n'),
+    ['# Title', '', 'Intro', '<br />', 'Body'].join('\n'),
   );
 });
 
@@ -112,11 +112,11 @@ test('keeps an edited plain first line and the external title synchronized', () 
   });
 });
 
-test('keeps the leading h1 authoritative and demotes later h1 headings', () => {
+test('keeps the leading h1 authoritative without demoting later h1 headings', () => {
   expect(
     synchronizeMarkdownTitle('# Editor title\n\nBody\n\n# Section', 'Field title'),
   ).toEqual({
     title: 'Editor title',
-    markdown: '# Editor title\n\nBody\n\n## Section',
+    markdown: '# Editor title\n\nBody\n\n# Section',
   });
 });
