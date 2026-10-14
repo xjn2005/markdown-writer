@@ -1,7 +1,7 @@
 {
   "name": "@rinspacehq/markdown-writer",
-  "version": "0.3.3",
-  "description": "Rinspace's Milkdown Markdown writing page and writing enhancements",
+  "version": "0.3.5",
+  "description": "Rinspace Markdown Editor built with Milkdown and Crepe",
   "license": "MIT",
   "type": "module",
   "files": [
@@ -86,11 +86,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rinspacehq/markdown-writer.git"
+    "url": "git+https://github.com/rinspacehq/rinspace-editor-markdown.git"
   },
-  "homepage": "https://github.com/rinspacehq/markdown-writer#readme",
+  "homepage": "https://github.com/rinspacehq/rinspace-editor-markdown#readme",
   "bugs": {
-    "url": "https://github.com/rinspacehq/markdown-writer/issues"
+    "url": "https://github.com/rinspacehq/rinspace-editor-markdown/issues"
   },
   "keywords": [
     "milkdown",

@@ -4,6 +4,10 @@ export { rinDisplayMathShortcutPlugin } from './plugins/displayMathShortcut';
 export { rinLatexCodeBlockGapCursorPlugin } from './plugins/latexGapCursor';
 export { rinLatexTrailingConfigPlugin } from './plugins/latexTrailingConfig';
 export { rinLatexTrailingPlaceholderPlugin } from './plugins/latexTrailingPlaceholder';
+export {
+  normalizeMarkdownTablePaste,
+  rinMarkdownTablePastePlugin,
+} from './plugins/markdownTablePaste';
 export { rinSingleLineDisplayMathInputRule } from './plugins/singleLineDisplayMath';
 export { rinTypedDisplayMathFenceMergePlugin } from './plugins/typedDisplayMathFenceMerge';
 export { rinTypedMarkdownTableInputPlugin } from './plugins/typedMarkdownTable';

@@ -42,7 +42,7 @@ for (const filename of ['main.tsx']) {
 const project = JSON.parse(readFileSync(resolve(template, 'package.json'), 'utf8'));
 project.name = basename(target).toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'markdown-writer-demo';
 project.version = packageInfo.version;
-const releaseAssetUrl = `https://github.com/rinspacehq/markdown-writer/releases/download/v${packageInfo.version}/rinspacehq-markdown-writer-${packageInfo.version}.tgz`;
+const releaseAssetUrl = `https://github.com/rinspacehq/rinspace-editor-markdown/releases/download/v${packageInfo.version}/rinspacehq-markdown-writer-${packageInfo.version}.tgz`;
 project.dependencies[packageInfo.name] = specIndex >= 0 ? args[specIndex + 1] : releaseAssetUrl;
 writeFileSync(resolve(target, 'package.json'), `${JSON.stringify(project, null, 2)}\n`);
 console.log(`Created ${target}`);

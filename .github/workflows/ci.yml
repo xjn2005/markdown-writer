@@ -8,51 +8,53 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: markdown-editor-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  audit:
-    name: Audit dependencies
-    runs-on: ubuntu-latest
+  checks:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - name: Dependency audit
+            command: npm audit --audit-level=high
+          - name: Build
+            command: npm run build
+          - name: Unit tests
+            command: npm test
+          - name: Package contents
+            command: npm pack --dry-run
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=high
+      - name: Run ${{ matrix.name }}
+        run: ${{ matrix.command }}
 
-  build:
-    name: Build package
-    runs-on: ubuntu-latest
+  check:
+    name: check
+    if: ${{ always() }}
+    needs: [checks]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-
-  test:
-    name: Run tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci
-      - run: npm test
-
-  pack:
-    name: Check package contents
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci
-      - run: npm pack --dry-run
+      - name: Require every named check
+        env:
+          CHECKS_RESULT: ${{ needs.checks.result }}
+        run: |
+          if [ "${CHECKS_RESULT}" != 'success' ]; then
+            echo '::error title=Package checks failed::Open the named failed check above for its focused log.'
+            exit 1
+          fi
+          echo 'All package checks passed.'

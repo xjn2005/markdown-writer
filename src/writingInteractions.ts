@@ -19,6 +19,7 @@ import {
 import { rinLatexBlockOpenEvent } from './mathEvents';
 import { createLatexBlockSyncScheduler } from './latexBlockSyncScheduler';
 import { syncLatexCodeBlockElement } from './mathView';
+import { normalizeMarkdownTablePaste } from './plugins/markdownTablePaste';
 
 export type InlineMathLabels = {
   ariaLabel: string;
@@ -179,7 +180,8 @@ export function createWritingInteractions({
     if (!shouldPasteClipboardAsMarkdown(text, html)) return;
     event.preventDefault();
     event.stopPropagation();
-    editorRef.current.editor.action((ctx) => pasteMarkdownMathInCtx(ctx, text));
+    const normalizedText = normalizeMarkdownTablePaste(text);
+    editorRef.current.editor.action((ctx) => pasteMarkdownMathInCtx(ctx, normalizedText));
     onPasteMarkdown?.(text);
     window.setTimeout(() => {
       syncLatexBlockViews();
