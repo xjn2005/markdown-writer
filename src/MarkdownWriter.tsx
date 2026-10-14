@@ -231,6 +231,7 @@ export const MarkdownWriter = forwardRef<MarkdownWriterHandle, MarkdownWriterPro
         host,
         editorRef: refs.editor,
         readOnlyRef: refs.readOnly,
+        mathTrust: current.editorOptions?.mathTrust ?? false,
         scheduleMathReparse,
         openLatexFromPointer: latex.openEditorFromPointer,
         openLatexFromFocus: latex.openEditorFromFocus,

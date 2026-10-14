@@ -17,6 +17,7 @@ import {
   shouldPasteClipboardAsMarkdown,
 } from './mathMarkdown';
 import { rinLatexBlockOpenEvent } from './mathEvents';
+import { createLatexBlockSyncScheduler } from './latexBlockSyncScheduler';
 import { syncLatexCodeBlockElement } from './mathView';
 
 export type InlineMathLabels = {
@@ -29,6 +30,7 @@ export type CreateWritingInteractionsOptions = {
   host: HTMLElement;
   editorRef: RefCell<Crepe | null>;
   readOnlyRef: RefCell<boolean>;
+  mathTrust?: boolean;
   scheduleMathReparse: (source: string) => void;
   openLatexFromPointer: (event: PointerEvent) => void;
   openLatexFromFocus: (event: FocusEvent) => void;
@@ -57,6 +59,7 @@ export function createWritingInteractions({
   onPasteMarkdown,
   onSynchronized,
   inlineMathLabels,
+  mathTrust = false,
 }: CreateWritingInteractionsOptions) {
   let attached = false;
   let destroyed = false;
@@ -119,15 +122,13 @@ export function createWritingInteractions({
     return true;
   };
 
-  const syncLatexBlockViews = () => {
-    host.querySelectorAll('.milkdown-code-block').forEach((block) => {
+  const syncLatexBlockViews = (
+    blocks: Iterable<Element> = host.querySelectorAll('.milkdown-code-block'),
+  ) => {
+    for (const block of blocks) {
       if (!(block instanceof HTMLElement)) return;
-      syncLatexCodeBlockElement(block, {
-        throwOnError: false,
-        strict: false,
-        trust: true,
-      });
-    });
+      syncLatexCodeBlockElement(block, latexSyncKatexOptions(mathTrust));
+    }
   };
 
   const synchronize = () => {
@@ -135,6 +136,31 @@ export function createWritingInteractions({
     focusPendingCodeBlockEditor();
     openFocusedLatex(host);
     onSynchronized?.();
+  };
+
+  const latexBlockSyncScheduler = createLatexBlockSyncScheduler<HTMLElement>({
+    schedule: window.requestAnimationFrame.bind(window),
+    cancel: window.cancelAnimationFrame.bind(window),
+    synchronize: (blocks) => {
+      syncLatexBlockViews(blocks);
+      focusPendingCodeBlockEditor();
+      openFocusedLatex(host);
+      onSynchronized?.();
+    },
+  });
+
+  const enqueueAffectedLatexBlocks = (node: Node) => {
+    if (!(node instanceof Element)) return;
+    const containingBlock = node.closest('.milkdown-code-block');
+    if (containingBlock instanceof HTMLElement) {
+      latexBlockSyncScheduler.enqueue(containingBlock);
+    }
+    if (node instanceof HTMLElement && node.matches('.milkdown-code-block')) {
+      latexBlockSyncScheduler.enqueue(node);
+    }
+    node.querySelectorAll('.milkdown-code-block').forEach((block) => {
+      if (block instanceof HTMLElement) latexBlockSyncScheduler.enqueue(block);
+    });
   };
 
   const parsePastedMathMarkdown = (event: ClipboardEvent) => {
@@ -327,7 +353,12 @@ export function createWritingInteractions({
     event.stopPropagation();
   };
 
-  const observer = new MutationObserver(synchronize);
+  const observer = new MutationObserver((records) => {
+    records.forEach((record) => {
+      enqueueAffectedLatexBlocks(record.target);
+      record.addedNodes.forEach(enqueueAffectedLatexBlocks);
+    });
+  });
 
   const attach = () => {
     if (attached || destroyed) return;
@@ -369,10 +400,19 @@ export function createWritingInteractions({
       host.removeEventListener('pointerdown', openLatexFromPointer, true);
       host.removeEventListener('focusin', openLatexFromFocus, true);
     }
+    latexBlockSyncScheduler.destroy();
     observer.disconnect();
     closeInlineMathEditor?.();
     closeInlineMathEditor = null;
   };
 
   return { attach, destroy, synchronize };
+}
+
+export function latexSyncKatexOptions(mathTrust = false) {
+  return {
+    throwOnError: false,
+    strict: false,
+    trust: mathTrust,
+  };
 }
